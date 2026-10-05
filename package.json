@@ -1,0 +1,29 @@
+{
+  "name": "squishy-bao-club",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Squishy Bao Club: Steam Rush mobile game",
+  "scripts": {
+    "build": "node prepare-web.cjs",
+    "dev": "py -m http.server 4173",
+    "cloudflare:db:create": "npx wrangler d1 create squishy-bao-club",
+    "cloudflare:db:migrate": "npx wrangler d1 execute squishy-bao-club --remote --file=worker/schema.sql",
+    "cloudflare:deploy": "npm run build && npx wrangler deploy",
+    "android:add": "npm run build && npx cap add android",
+    "android:sync": "npm run build && npx cap sync android",
+    "android:open": "npx cap open android",
+    "ios:add": "npm run build && npx cap add ios",
+    "ios:sync": "npm run build && npx cap sync ios",
+    "ios:open": "npx cap open ios"
+  },
+  "dependencies": {
+    "@capacitor/core": "^7.4.3",
+    "jose": "^6.1.0"
+  },
+  "devDependencies": {
+    "@capacitor/android": "^7.4.3",
+    "@capacitor/cli": "^7.4.3",
+    "@capacitor/ios": "^7.4.3",
+    "wrangler": "^4.0.0"
+  }
+}

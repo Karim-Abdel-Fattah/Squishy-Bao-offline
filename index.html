@@ -1,0 +1,512 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#fff0a8">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="description" content="A fast, feel-good dumpling squishing game. Build your streak in Steam Rush.">
+  <title>Squishy Bao Club</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #302d50;
+      --muted: #77728b;
+      --mint: #c8f2dd;
+      --paper: #fffdf6;
+      --coral: #ff6c59;
+      --coral-dark: #e65349;
+      --sun: #ffd45c;
+      --line: #d7d3e1;
+      --blue: #a9e6f2;
+      --pink: #ffb9c8;
+      --lilac: #c3b3ff;
+      --display: "Baloo 2", "Arial Rounded MT Bold", "Trebuchet MS", sans-serif;
+      --body: "Nunito", "Trebuchet MS", Arial, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html { min-height: 100%; background: #f8f6ff; }
+    body {
+      min-height: 100svh;
+      margin: 0;
+      color: var(--ink);
+      font-family: var(--body);
+      background-color: #f8f6ff;
+      background-image: radial-gradient(rgb(48 45 80 / 9%) 0.7px, transparent 0.7px);
+      background-size: 21px 21px;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    button { color: inherit; font: inherit; }
+    .app {
+      width: min(100%, 560px);
+      min-height: 100svh;
+      margin: 0 auto;
+      padding: max(18px, env(safe-area-inset-top)) 20px max(20px, env(safe-area-inset-bottom));
+      display: flex;
+      flex-direction: column;
+    }
+    .topbar { display: flex; justify-content: space-between; align-items: center; min-height: 48px; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+    .brand { display: flex; align-items: center; gap: 10px; font-size: 12px; font-weight: 900; letter-spacing: 1.05px; text-transform: uppercase; }
+    .brand-mark { width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid var(--ink); border-radius: 50%; background: var(--sun); transform: rotate(-7deg); }
+    .icon-svg { display: block; width: 1em; height: 1em; overflow: visible; }
+    .icon-button { width: 42px; height: 42px; display: grid; place-items: center; border: 1px solid var(--ink); border-radius: 8px; background: var(--paper); box-shadow: 0 2px 0 var(--ink); cursor: pointer; font-size: 19px; }
+    .icon-button:hover { background: #f4e8c7; }
+    .icon-button:active { transform: translateY(2px); box-shadow: none; }
+    .heading { display: flex; align-items: end; justify-content: space-between; margin: 21px 1px 15px; gap: 12px; }
+    h1 { margin: 0; font-family: var(--display); font-size: 34px; line-height: 1.02; font-weight: 700; letter-spacing: 0; }
+    .eyebrow { margin: 0 0 5px; color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: 1.15px; text-transform: uppercase; }
+    .best { text-align: right; white-space: nowrap; }
+    .best-value { display: block; font-size: 16px; font-weight: 1000; font-variant-numeric: tabular-nums; }
+    .stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 9px; margin-bottom: 11px; }
+    .stat { min-width: 0; min-height: 63px; padding: 9px 11px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); box-shadow: 0 2px 0 rgb(35 58 50 / 13%); }
+    .stat-label { display: block; margin-bottom: 2px; color: var(--muted); font-size: 9px; font-weight: 900; letter-spacing: 0.85px; text-transform: uppercase; }
+    .stat-value { display: flex; align-items: baseline; gap: 3px; font-size: 22px; line-height: 1.1; font-weight: 1000; font-variant-numeric: tabular-nums; }
+    .stat-value small { font-size: 11px; }
+    .timer-card { background: #f7eedb; }
+    .timer-card.low { background: #f7ded5; color: var(--coral-dark); animation: tick 0.65s ease-in-out infinite alternate; }
+    .combo-card { background: #f0e5be; }
+    .arena {
+      position: relative;
+      width: 100%;
+      height: clamp(340px, 49svh, 510px);
+      min-height: 340px;
+      overflow: hidden;
+      border: 1px solid #69806f;
+      border-radius: 17px;
+      background: #d2e4cf;
+      box-shadow: 0 5px 0 var(--ink);
+      isolation: isolate;
+    }
+    canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: crosshair; }
+    .screen {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      display: grid;
+      place-items: center;
+      padding: 22px;
+      background: rgb(226 236 218 / 91%);
+      backdrop-filter: blur(2px);
+      text-align: center;
+    }
+    .screen[hidden] { display: none; }
+    .screen-content { width: min(100%, 330px); animation: arrive 360ms cubic-bezier(.2,.8,.2,1) both; }
+    .hero-dumpling { display: grid; place-items: center; width: 76px; height: 76px; margin: 0 auto 12px; filter: drop-shadow(0 4px 0 rgb(35 58 50 / 13%)); animation: bob 2s ease-in-out infinite; }
+    .result-icon { width: 100%; height: 100%; }
+    .screen h2 { margin: 0; font-family: var(--display); font-size: 40px; line-height: 0.98; letter-spacing: 0; font-weight: 700; }
+    .screen-copy { margin: 12px auto 21px; max-width: 275px; color: #52675a; font-size: 15px; line-height: 1.5; font-weight: 600; }
+    .primary-button { min-height: 56px; width: 100%; padding: 12px 20px; border: 1px solid var(--ink); border-radius: 8px; background: var(--coral); box-shadow: 0 3px 0 var(--ink); color: #fffdf4; font-size: 15px; font-weight: 900; letter-spacing: 0.65px; text-transform: uppercase; cursor: pointer; transition: transform 100ms, box-shadow 100ms, background 100ms; }
+    .primary-button:hover { background: var(--coral-dark); }
+    .primary-button:active { transform: translateY(3px); box-shadow: 0 2px 0 var(--ink); }
+    .primary-button:focus-visible, .icon-button:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+    .microcopy { margin: 12px 0 0; color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: 0.55px; text-transform: uppercase; }
+    .bottomline { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 14px; color: #52675a; font-size: 11px; font-weight: 800; }
+    .goal { display: flex; align-items: center; gap: 6px; }
+    .goal-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--coral); box-shadow: 0 0 0 2px var(--paper); }
+    .streak-meter { height: 7px; flex: 1; max-width: 125px; overflow: hidden; border: 1px solid var(--ink); border-radius: 99px; background: var(--paper); }
+    .streak-fill { width: 0; height: 100%; border-radius: inherit; background: var(--coral); transition: width 180ms ease-out; }
+    .footer { margin-top: auto; padding-top: 17px; display: flex; justify-content: center; color: #718073; font-size: 10px; font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase; }
+    .toast { position: absolute; z-index: 1; top: 15%; left: 50%; color: var(--coral-dark); font-size: 23px; font-weight: 1000; text-shadow: 0 2px var(--paper); pointer-events: none; transform: translate(-50%, 8px) scale(.8); opacity: 0; }
+    .toast.show { animation: toast-up 650ms ease-out both; }
+    @keyframes arrive { from { opacity: 0; transform: translateY(12px) scale(.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
+    @keyframes bob { 50% { transform: translateY(-7px) rotate(4deg); } }
+    @keyframes tick { to { transform: scale(1.035); } }
+    @keyframes toast-up { 0% { opacity: 0; transform: translate(-50%, 10px) scale(.75) rotate(-5deg); } 20% { opacity: 1; transform: translate(-50%, 0) scale(1.1) rotate(2deg); } 100% { opacity: 0; transform: translate(-50%, -35px) scale(.95); } }
+    @media (min-width: 600px) and (max-width: 899px) {
+      .app { width: min(100%, 760px); padding: max(26px, env(safe-area-inset-top)) 34px max(24px, env(safe-area-inset-bottom)); }
+      .topbar { min-height: 56px; }
+      .heading { margin: 28px 2px 18px; }
+      h1 { font-size: 46px; }
+      .stats { gap: 14px; margin-bottom: 16px; }
+      .stat { min-height: 78px; padding: 13px 15px; }
+      .stat-value { font-size: 27px; }
+      .arena { height: min(58svh, 620px); min-height: 440px; border-radius: 21px; }
+      .screen-content { width: min(100%, 365px); }
+      .screen h2 { font-size: 48px; }
+      .screen-copy { font-size: 16px; }
+      .bottomline { margin-top: 18px; }
+    }
+    @media (min-width: 900px) {
+      .app {
+        width: min(100%, 1280px);
+        min-height: 100svh;
+        padding: max(25px, env(safe-area-inset-top)) clamp(28px, 5.5vw, 72px) max(22px, env(safe-area-inset-bottom));
+        display: grid;
+        grid-template-columns: minmax(280px, 0.78fr) minmax(0, 1.22fr);
+        grid-template-rows: auto auto auto minmax(100px, 1fr) auto;
+        column-gap: clamp(30px, 5vw, 70px);
+        align-content: stretch;
+      }
+      .topbar { grid-column: 1 / -1; grid-row: 1; margin-bottom: 22px; }
+      .brand { font-size: 13px; }
+      .heading { grid-column: 1; grid-row: 2; display: block; align-self: end; margin: 6px 0 24px; }
+      h1 { max-width: 420px; font-size: 60px; line-height: 0.98; }
+      .heading .eyebrow { font-size: 11px; }
+      .best { display: flex; align-items: baseline; gap: 12px; margin-top: 20px; text-align: left; }
+      .best-value { font-family: var(--display); font-size: 22px; }
+      .stats { grid-column: 1; grid-row: 3; align-self: start; gap: 10px; margin-bottom: 0; }
+      .stat { min-height: 84px; padding: 13px 12px; }
+      .stat-value { font-size: 28px; }
+      .stat-value small { font-size: 12px; }
+      .stat-label { font-size: 9px; }
+      .arena { grid-column: 2; grid-row: 2 / 5; align-self: center; height: clamp(500px, 68svh, 690px); min-height: 0; border-radius: 22px; }
+      .screen-content { width: min(100%, 390px); }
+      .screen h2 { font-size: 54px; }
+      .screen-copy { max-width: 315px; font-size: 16px; }
+      .hero-dumpling { width: 92px; height: 92px; margin-bottom: 17px; }
+      .primary-button { min-height: 62px; font-size: 16px; }
+      .bottomline { grid-column: 1; grid-row: 4; align-self: end; margin: 0 0 25px; gap: 13px; }
+      .goal { white-space: nowrap; }
+      .streak-meter { max-width: none; }
+      .footer { grid-column: 1 / -1; grid-row: 5; margin-top: 0; padding-top: 14px; border-top: 1px solid var(--line); }
+    }
+    @media (max-height: 690px) and (min-width: 390px) and (max-width: 899px) { .app { padding-top: 8px; padding-bottom: 9px; } .heading { margin: 9px 1px; } .arena { height: 43svh; min-height: 280px; } .footer { padding-top: 8px; } }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; } }
+    [hidden] { display: none !important; }
+    .app { position: relative; width: min(calc(100% - 28px), 1180px); min-height: 100svh; padding: 16px 0 24px; display: block; }
+    .topbar { min-height: 58px; padding: 0 2px 12px; border-color: #dfd9eb; }
+    .brand { color: var(--ink); text-decoration: none; font-size: 14px; letter-spacing: 0.3px; }
+    .brand-mark { width: 39px; height: 39px; border: 2px solid var(--ink); background: var(--pink); font-size: 22px; transform: rotate(-9deg); }
+    .header-actions { display: flex; align-items: center; gap: 9px; }
+    .wallet { display: flex; align-items: center; gap: 5px; }
+    .wallet > span { min-width: 76px; padding: 7px 10px; display: flex; align-items: center; justify-content: center; gap: 5px; border: 1.5px solid var(--ink); border-radius: 8px; background: var(--paper); box-shadow: 0 2px 0 var(--ink); text-align: center; font-size: 14px; }
+    .currency-icon { width: 18px; height: 18px; }
+    .wallet > span:last-child { background: #e9e2ff; }
+    .wallet b { font-weight: 1000; font-variant-numeric: tabular-nums; }
+    .account-button, .icon-button { min-height: 42px; padding: 0 12px; border: 1.5px solid var(--ink); border-radius: 8px; background: var(--paper); box-shadow: 0 2px 0 var(--ink); font-weight: 900; cursor: pointer; }
+    .account-button:disabled { opacity: 0.6; box-shadow: none; cursor: not-allowed; }
+    .account-button { display: flex; align-items: center; gap: 7px; }
+    .account-button:hover, .icon-button:hover { background: #fff0a8; }
+    .icon-button { width: 42px; padding: 0; }
+    .nav-tabs { display: flex; justify-content: center; gap: 7px; margin: 16px auto 20px; padding: 5px; width: fit-content; border: 1.5px solid var(--ink); border-radius: 11px; background: #eeebf7; box-shadow: 0 3px 0 var(--ink); }
+    .nav-tab { min-width: 106px; min-height: 42px; padding: 6px 14px; border: 0; border-radius: 8px; background: transparent; color: #69657d; font-weight: 1000; cursor: pointer; }
+    .nav-tab > span { display: inline-flex; vertical-align: middle; margin-right: 4px; }
+    .nav-icon { width: 19px; height: 19px; }
+    .nav-tab.active { background: var(--sun); color: var(--ink); box-shadow: 0 2px 0 rgb(48 45 80 / 17%); }
+    .nav-tab:focus-visible, .account-button:focus-visible, .icon-button:focus-visible, .level-node:focus-visible, .buy-button:focus-visible, .loadout-button:focus-visible { outline: 3px solid #5b85e5; outline-offset: 2px; }
+    .account-note { margin: -10px 0 12px; color: var(--muted); text-align: center; font-size: 12px; font-weight: 800; }
+    .home-view, .content-view { animation: arrive 280ms ease-out both; }
+    .welcome-panel { position: relative; min-height: 260px; display: grid; grid-template-columns: 1fr 0.7fr; align-items: center; overflow: hidden; padding: 28px 34px; border: 2px solid var(--ink); border-radius: 23px; background-color: #ffdd63; background-image: radial-gradient(rgb(48 45 80 / 11%) 1px, transparent 1px); background-size: 18px 18px; box-shadow: 0 5px 0 var(--ink); }
+    .welcome-copy { position: relative; z-index: 1; max-width: 500px; }
+    .welcome-copy .eyebrow { color: #625732; }
+    .welcome-copy h1 { margin: 0; font-family: var(--display); font-size: 55px; line-height: 0.91; font-weight: 800; }
+    .welcome-copy h1 span { color: var(--coral-dark); }
+    .welcome-note { max-width: 400px; margin: 12px 0 17px; color: #4e4962; font-size: 16px; font-weight: 800; line-height: 1.4; }
+    .welcome-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
+    .welcome-actions .primary-button { width: auto; min-width: 180px; min-height: 49px; padding: 8px 19px; }
+    .welcome-actions > span { color: #5e563d; font-size: 12px; font-weight: 1000; }
+    .welcome-art { position: relative; width: min(100%, 250px); height: 215px; justify-self: center; display: grid; place-items: center; }
+    .welcome-art::before { content: ""; position: absolute; width: 176px; height: 176px; border: 2px dashed var(--ink); border-radius: 50%; background: #fff8d8; transform: rotate(-11deg); }
+    .welcome-art img { position: relative; z-index: 1; width: 152px; height: 152px; filter: drop-shadow(0 7px 0 rgb(48 45 80 / 14%)); transform: rotate(7deg); animation: bob 2.8s ease-in-out infinite; }
+    .sparkle { position: absolute; z-index: 2; width: 38px; height: 38px; color: var(--coral-dark); }
+    .sparkle-one { top: 15px; left: 14px; transform: rotate(-13deg); }
+    .sparkle-two { right: 5px; bottom: 23px; color: #4c91a8; transform: rotate(11deg); }
+    .art-caption { position: absolute; z-index: 3; right: 0; bottom: 15px; padding: 7px 9px 5px; border: 1.5px solid var(--ink); border-radius: 6px; background: var(--pink); font-size: 10px; font-weight: 1000; line-height: 0.95; text-align: center; transform: rotate(7deg); }
+    .welcome-ribbon { position: absolute; top: 17px; right: 18px; padding: 5px 10px; border: 1.5px solid var(--ink); border-radius: 5px; background: var(--mint); color: var(--ink); font-size: 9px; font-weight: 1000; letter-spacing: 0.8px; transform: rotate(2deg); }
+    .level-section, .shop-section, .wardrobe-section { margin-top: 29px; }
+    .section-heading { display: flex; align-items: end; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+    .section-heading .eyebrow { margin-bottom: 0; }
+    .section-heading h2, .gift-copy h2 { margin: 0; font-family: var(--display); font-size: 28px; line-height: 1.05; font-weight: 800; }
+    .section-count { padding: 6px 10px; border: 1px solid var(--ink); border-radius: 99px; background: var(--blue); font-size: 11px; font-weight: 1000; white-space: nowrap; }
+    .level-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; }
+    .level-category { padding: 0 0 14px; border-bottom: 1px dashed #cac4da; }
+    .level-category-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 8px; color: var(--muted); font-size: 11px; font-weight: 900; }
+    .level-category-heading h3 { margin: 0; color: var(--ink); font-family: var(--display); font-size: 19px; font-weight: 800; }
+    .level-category-grid { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 9px; }
+    .level-node { aspect-ratio: 1; min-width: 0; position: relative; display: grid; place-items: center; border: 1.5px solid var(--ink); border-radius: 9px; background: var(--paper); box-shadow: 0 3px 0 var(--ink); color: var(--ink); font-family: var(--display); font-size: 20px; font-weight: 800; cursor: pointer; transition: transform 120ms, background 120ms; }
+    .level-node:hover:not(:disabled) { background: var(--sun); transform: translateY(-2px) rotate(-2deg); }
+    .level-node.current { background: var(--coral); color: white; }
+    .level-node.special { border-color: #8e6bcb; background: #ece4ff; }
+    .level-node.special.current { background: #9d7de4; color: white; }
+    .level-node.complete { background: var(--mint); }
+    .level-node:disabled { color: #a7a2b1; background: #eeedf1; box-shadow: none; cursor: not-allowed; }
+    .level-node .level-marker { position: absolute; right: 3px; top: 2px; width: 13px; height: 13px; }
+    .tiny-icon { display: inline-block; width: 13px; height: 13px; vertical-align: middle; }
+    .home-footnote { margin: 18px 0 0; color: var(--muted); text-align: center; font-size: 12px; font-weight: 900; }
+    .content-view { min-height: 60svh; }
+    .view-heading { margin: 26px 0 20px; }
+    .view-heading h1 { margin: 0; font-family: var(--display); font-size: 46px; font-weight: 800; line-height: 1; }
+    .view-heading > p:last-child { margin: 7px 0 0; color: var(--muted); font-size: 15px; font-weight: 800; }
+    .gift-feature { display: grid; grid-template-columns: 82px 1fr auto; align-items: center; gap: 17px; padding: 17px 20px; border: 1.5px solid var(--ink); border-radius: 12px; background: var(--pink); box-shadow: 0 4px 0 var(--ink); }
+    .gift-art { width: 75px; height: 75px; display: grid; place-items: center; border: 1.5px solid var(--ink); border-radius: 10px; background: var(--paper); transform: rotate(-4deg); }
+    .gift-icon { width: 49px; height: 49px; }
+    .gift-copy h2 { font-size: 25px; }
+    .gift-copy p:last-child { max-width: 490px; margin: 4px 0 0; color: #625365; font-size: 13px; font-weight: 800; }
+    .buy-button { min-height: 42px; padding: 8px 14px; border: 1.5px solid var(--ink); border-radius: 8px; background: var(--sun); box-shadow: 0 2px 0 var(--ink); color: var(--ink); font-weight: 1000; cursor: pointer; }
+    .buy-button:hover { background: #ffe68d; }
+    .buy-button:disabled { opacity: 0.5; box-shadow: none; cursor: not-allowed; }
+    .shop-message { min-height: 20px; margin: 9px 0 0; color: #55775f; font-size: 12px; font-weight: 900; }
+    .item-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+    .item-card { min-width: 0; padding: 13px; border: 1.5px solid var(--ink); border-radius: 9px; background: var(--paper); box-shadow: 0 3px 0 rgb(48 45 80 / 24%); }
+    .item-card:nth-child(3n + 2) { background: #e5f5ec; }
+    .item-card:nth-child(3n) { background: #fff1c9; }
+    .item-card.active-loadout { outline: 2px solid #62b992; outline-offset: 1px; }
+    .item-card-top { display: flex; align-items: start; justify-content: space-between; gap: 7px; }
+    .item-art { width: 51px; height: 51px; display: grid; place-items: center; flex: 0 0 auto; border: 1.5px solid var(--ink); border-radius: 50%; background: white; }
+    .item-art.skin-art { position: relative; }
+    .item-icon { width: 34px; height: 34px; }
+    .skin-icon-main { width: 36px; height: 36px; transform: translate(-2px, 1px); }
+    .skin-icon-badge { position: absolute; right: -2px; bottom: -3px; width: 24px; height: 24px; padding: 3px; display: block; border: 1px solid var(--ink); border-radius: 50%; background: var(--paper); }
+    .item-card h3 { margin: 9px 0 2px; font-family: var(--display); font-size: 20px; font-weight: 800; line-height: 1; }
+    .item-card p { min-height: 34px; margin: 4px 0 12px; color: #6c687d; font-size: 11px; font-weight: 800; line-height: 1.35; }
+    .item-card .buy-button, .item-card .loadout-button { width: 100%; }
+    .item-tag { padding: 3px 6px; border-radius: 4px; background: #e7e1ff; color: #4a426f; font-size: 9px; font-weight: 1000; white-space: nowrap; }
+    .item-tag.common { background: #dff2df; color: #356b47; }
+    .item-tag.rare { background: #e9dfff; color: #6948a5; }
+    .collect-note { min-height: 38px; display: flex; align-items: center; justify-content: center; padding: 6px 8px; border: 1px dashed #a9a2b9; border-radius: 7px; color: #706a82; font-size: 11px; font-weight: 900; text-align: center; }
+    .box-odds { display: flex; flex-wrap: wrap; gap: 8px 15px; margin: 10px 0 0; padding: 10px 12px; border: 1px dashed #aaa2ba; border-radius: 8px; background: #f2eff8; color: #5e5872; font-size: 11px; font-weight: 900; }
+    .box-odds strong { color: var(--ink); }
+    .admin-code-panel { display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 10px; margin-top: 26px; padding: 14px; border: 1px dashed #aaa2ba; border-radius: 9px; background: #f2eff8; }
+    .admin-code-panel label { display: grid; gap: 5px; color: var(--muted); font-size: 11px; font-weight: 900; }
+    .admin-code-panel input { width: 100%; min-height: 42px; padding: 7px 11px; border: 1px solid var(--line); border-radius: 7px; background: var(--paper); color: var(--ink); font: inherit; font-weight: 800; }
+    .admin-code-panel .secondary-button { min-height: 42px; box-shadow: none; }
+    .loadout-button { min-height: 38px; padding: 7px 9px; border: 1.5px solid var(--ink); border-radius: 7px; background: #f2eff8; font-size: 11px; font-weight: 1000; cursor: pointer; }
+    .loadout-button.selected { background: var(--mint); }
+    .loadout-button:disabled { opacity: 0.45; cursor: not-allowed; }
+    .gift-shelf { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+    .rare-gift { background: var(--lilac); }
+    .wardrobe-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+    .game-heading { align-items: center; }
+    .game-heading h1 { font-size: 34px; }
+    .round-detail { margin: 0; color: var(--muted); font-weight: 900; }
+    .back-button, .secondary-button { min-height: 40px; padding: 7px 12px; border: 1.5px solid var(--ink); border-radius: 8px; background: var(--paper); box-shadow: 0 2px 0 var(--ink); font-weight: 900; cursor: pointer; }
+    .round-streak { display: flex; align-items: center; gap: 12px; margin: 0 0 9px; color: var(--muted); font-size: 12px; font-weight: 900; }
+    .round-streak .streak-meter { max-width: none; }
+    .round-streak #spice-label { margin-left: auto; }
+    .game-arena { height: min(58svh, 620px); min-height: 340px; }
+    .game-bottomline { justify-content: center; gap: 9px; margin: 15px 0 0; }
+    .game-bottomline > span:last-child { color: var(--muted); }
+    .screen { background: rgb(255 248 223 / 90%); }
+    .screen-content { max-width: 390px; }
+    .result-reward { margin: 0 0 14px; color: #807024; font-size: 18px; font-weight: 1000; }
+    .secondary-button { width: 100%; margin-top: 10px; }
+    .text-button { margin-top: 12px; border: 0; background: transparent; color: var(--muted); font-size: 12px; font-weight: 900; text-decoration: underline; cursor: pointer; }
+    .toast { position: fixed; z-index: 20; top: auto; bottom: 24px; left: 50%; width: max-content; max-width: calc(100vw - 32px); padding: 10px 16px; border: 1.5px solid var(--ink); border-radius: 8px; background: var(--sun); color: var(--ink); box-shadow: 0 3px 0 var(--ink); font-family: var(--display); font-size: 18px; text-align: center; }
+    .toast.show { animation: toast-up 700ms ease-out both; }
+    .gift-reveal { position: fixed; z-index: 30; inset: 0; display: grid; place-items: center; padding: 18px; background: rgb(48 45 80 / 54%); }
+    .gift-reveal[hidden] { display: none; }
+    .gift-reveal-card { width: min(100%, 350px); padding: 24px; border: 2px solid var(--ink); border-radius: 18px; background: var(--sun); box-shadow: 0 6px 0 var(--ink); text-align: center; animation: arrive 250ms ease-out both; }
+    .gift-reveal-art { width: 88px; height: 88px; margin: 0 auto; display: grid; place-items: center; animation: bob 1.8s ease-in-out infinite; }
+    .reveal-icon { width: 78px; height: 78px; }
+    .gift-reveal-art.skin-reveal-art { position: relative; width: 110px; height: 110px; border: 2px solid var(--ink); border-radius: 50%; }
+    .skin-reveal-art .skin-icon-main { width: 78px; height: 78px; }
+    .skin-reveal-art .skin-icon-badge { right: -2px; bottom: 0; width: 38px; height: 38px; padding: 5px; }
+    .gift-reveal-card h2 { margin: 4px 0; font-family: var(--display); font-size: 31px; line-height: 1; }
+    .gift-reveal-card p { margin: 5px 0 17px; color: #635c47; font-weight: 900; }
+    .gift-reveal-card .primary-button { width: 100%; }
+    .app[data-view="home"] .game-heading, .app[data-view="home"] .game-stats, .app[data-view="home"] .round-streak, .app[data-view="home"] .game-arena, .app[data-view="home"] .game-bottomline,
+    .app[data-view="shop"] .game-heading, .app[data-view="shop"] .game-stats, .app[data-view="shop"] .round-streak, .app[data-view="shop"] .game-arena, .app[data-view="shop"] .game-bottomline,
+    .app[data-view="wardrobe"] .game-heading, .app[data-view="wardrobe"] .game-stats, .app[data-view="wardrobe"] .round-streak, .app[data-view="wardrobe"] .game-arena, .app[data-view="wardrobe"] .game-bottomline { display: none; }
+    .app[data-view="home"] #shop-view, .app[data-view="home"] #wardrobe-view, .app[data-view="shop"] #home-view, .app[data-view="shop"] #wardrobe-view, .app[data-view="wardrobe"] #home-view, .app[data-view="wardrobe"] #shop-view { display: none; }
+    .app[data-view="game"] #home-view, .app[data-view="game"] #shop-view, .app[data-view="game"] #wardrobe-view, .app[data-view="game"] .nav-tabs, .app[data-view="game"] .account-note { display: none !important; }
+    .app[data-view="game"] .game-heading, .app[data-view="game"] .game-stats, .app[data-view="game"] .round-streak, .app[data-view="game"] .game-arena, .app[data-view="game"] .game-bottomline { display: flex; }
+    .app[data-view="game"] .game-stats { display: grid; }
+    .app[data-view="game"] .game-arena { display: block; }
+    @media (min-width: 600px) and (max-width: 899px) {
+      .app { width: min(calc(100% - 40px), 760px); padding-top: 21px; }
+      .level-category-grid { grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 11px; }
+      .welcome-panel { min-height: 285px; padding: 30px; }
+      .welcome-copy h1 { font-size: 59px; }
+      .welcome-art { height: 230px; }
+      .item-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .gift-shelf { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .game-arena { height: min(58svh, 620px); min-height: 440px; }
+    }
+    @media (min-width: 900px) {
+      .app { width: min(calc(100% - 48px), 1180px); padding-top: 20px; display: block; }
+      .topbar { margin-bottom: 0; }
+      .nav-tabs { margin: 17px auto 22px; }
+      .home-view { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr); gap: 22px 28px; }
+      .welcome-panel { grid-column: 1 / -1; min-height: 290px; padding: 32px 45px; }
+      .welcome-copy h1 { font-size: 64px; }
+      .welcome-art { width: 290px; height: 235px; }
+      .welcome-art img { width: 165px; height: 165px; }
+      .level-section { grid-column: 1 / -1; }
+      .level-category-grid { grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 11px; }
+      .level-node { font-size: 22px; }
+      .content-view { max-width: 1080px; margin: 0 auto; }
+      .shop-section, .wardrobe-section { margin-top: 25px; }
+      .item-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .game-heading { margin: 20px 0 14px; }
+      .game-heading h1 { font-size: 38px; }
+      .game-stats { margin-bottom: 12px; }
+      .game-arena { height: min(59svh, 610px); min-height: 440px; }
+    }
+    @media (max-width: 599px) {
+      .app { width: min(calc(100% - 22px), 500px); padding-top: 10px; }
+      .topbar { min-height: 47px; padding-bottom: 8px; }
+      .brand { gap: 6px; font-size: 8px; letter-spacing: 0; white-space: nowrap; }
+      .brand-mark { width: 31px; height: 31px; font-size: 18px; }
+      .header-actions { gap: 6px; }
+      .wallet { gap: 4px; }
+      .wallet > span { min-width: auto; padding: 6px 7px; font-size: 12px; }
+      .account-button { min-height: 36px; padding: 0 7px; gap: 4px; font-size: 10px; white-space: nowrap; }
+      .icon-button { width: 36px; min-height: 36px; }
+      .nav-tabs { width: 100%; justify-content: stretch; margin: 12px auto 15px; }
+      .nav-tab { min-width: 0; flex: 1; padding: 5px 7px; font-size: 12px; }
+      .welcome-panel { min-height: 0; grid-template-columns: 1.15fr 0.85fr; gap: 0; padding: 23px 16px 21px; border-radius: 17px; }
+      .welcome-copy h1 { font-size: 41px; }
+      .welcome-note { margin: 8px 0 12px; font-size: 12px; }
+      .welcome-actions { align-items: start; gap: 7px; }
+      .welcome-actions .primary-button { min-width: 0; min-height: 43px; padding: 7px 12px; font-size: 12px; }
+      .welcome-actions > span { width: 100%; font-size: 10px; }
+      .welcome-ribbon { top: 8px; right: 8px; font-size: 7px; }
+      .welcome-art { width: 100%; height: 150px; margin-top: 18px; }
+      .welcome-art::before { width: 118px; height: 118px; }
+      .welcome-art img { width: 102px; height: 102px; }
+      .sparkle { font-size: 26px; }
+      .sparkle-one { top: 11px; left: 0; }
+      .sparkle-two { right: -3px; bottom: 18px; }
+      .art-caption { right: -4px; bottom: 8px; font-size: 8px; }
+      .level-section, .shop-section, .wardrobe-section { margin-top: 23px; }
+      .section-heading h2 { font-size: 24px; }
+      .section-heading .eyebrow { font-size: 8px; }
+      .section-count { padding: 5px 8px; font-size: 9px; }
+      .level-category-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+      .level-node { border-radius: 8px; font-size: 19px; }
+      .view-heading { margin: 21px 0 16px; }
+      .view-heading h1 { font-size: 38px; }
+      .view-heading > p:last-child { font-size: 13px; }
+      .gift-feature { grid-template-columns: 55px 1fr; gap: 10px; padding: 12px; }
+      .gift-shelf { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+      .gift-art { width: 53px; height: 53px; font-size: 29px; }
+      .gift-copy h2 { font-size: 20px; }
+      .gift-copy p:last-child { font-size: 10px; }
+      .gift-buy { grid-column: 1 / -1; width: 100%; }
+      .item-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+      .item-card { padding: 10px; }
+      .item-card h3 { font-size: 18px; }
+      .item-card p { font-size: 10px; }
+      .wardrobe-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .game-heading { margin: 14px 0 9px; }
+      .game-heading h1 { font-size: 27px; }
+      .round-detail { font-size: 12px; }
+      .back-button { padding: 6px 8px; font-size: 11px; }
+      .game-stats { gap: 6px; margin-bottom: 9px; }
+      .game-stats .stat { min-height: 58px; padding: 8px; }
+      .game-stats .stat-label { font-size: 8px; letter-spacing: 0; }
+      .game-stats .stat-value { font-size: 19px; }
+      .game-stats .stat-value small { font-size: 9px; }
+      .round-streak { font-size: 10px; }
+      .game-arena { height: min(54svh, 480px); min-height: 320px; }
+      .game-bottomline { flex-wrap: wrap; font-size: 10px; }
+      .footer { padding-top: 14px; }
+    }
+    @media (max-width: 480px) {
+      .header-actions { gap: 5px; }
+      .wallet { gap: 3px; }
+      .wallet > span { min-width: 55px; padding: 5px 6px; font-size: 12px; }
+      .currency-icon { width: 15px; height: 15px; }
+      .account-button { width: 42px; min-height: 42px; padding: 0; justify-content: center; }
+      .account-button #account-label { display: none; }
+    }
+    @media (max-width: 359px) {
+      .topbar { gap: 5px; }
+      .brand { gap: 4px; font-size: 7px; }
+      .brand-mark { width: 26px; height: 26px; font-size: 15px; }
+      .header-actions { gap: 3px; }
+      .wallet { gap: 2px; }
+      .wallet > span { padding: 4px; font-size: 10px; }
+      .account-button { width: 30px; min-height: 30px; padding: 0; justify-content: center; }
+      .account-button #account-label { display: none; }
+      .icon-button { width: 30px; min-height: 30px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app" data-view="home">
+    <header class="topbar">
+      <a class="brand" href="#home" aria-label="Squishy Bao Club home"><span class="brand-mark" aria-hidden="true"><svg class="icon-svg" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M16 15C8 14 8 5 13 5c3 0 3 5 3 10Zm1 1c1-8 10-8 10-3 0 3-5 3-10 3Zm-1 1c8 1 8 10 3 10-3 0-3-5-3-10Zm-1-1c-1 8-10 8-10 3 0-3 5-3 10-3Zm1-1c-8-1-8-10-3-10 3 0 3 5 3 10Zm0 2c-1 8-10 8-10 3 0-3 5-3 10-3Z" fill="#ff6c59"/><circle cx="16" cy="16" r="2" fill="#ffd45c"/></svg></span><span>Squishy Bao Club</span></a>
+      <div class="header-actions">
+        <div class="wallet" aria-label="Your pocket money"><span><svg class="icon-svg currency-icon" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="18" fill="#ffd45c" stroke="#302d50" stroke-width="2.5"/><circle cx="24" cy="24" r="12" fill="none" stroke="#302d50" stroke-width="2"/><path d="m24 15 3 6 6 1-5 4 1 6-5-3-5 3 1-6-5-4 6-1Z" fill="#fffdf6" stroke="#302d50" stroke-width="1.5"/></svg><b id="coin-count">250</b></span><span><svg class="icon-svg currency-icon" viewBox="0 0 48 48" aria-hidden="true"><path d="m24 5 14 9-14 29L10 14Z" fill="#c3b3ff" stroke="#302d50" stroke-width="2.5"/><path d="m10 14 14 2 14-2M24 16v27" fill="none" stroke="#302d50" stroke-width="2"/></svg><b id="diamond-count">5</b></span></div>
+        <button id="account-button" class="account-button" type="button" aria-label="Cloud sign-in unavailable until setup" title="Cloud sign-in is not configured yet" disabled><span aria-hidden="true"><svg class="icon-svg nav-icon" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 37a8 8 0 0 1-1-16 13 13 0 0 1 25 3 7 7 0 0 1-1 13Z" fill="#d6ccff"/></svg></span><span id="account-label">Cloud soon</span></button>
+        <button id="sound-button" class="icon-button" type="button" aria-label="Turn sound off" title="Sound on"></button>
+      </div>
+    </header>
+    <nav class="nav-tabs" role="tablist" aria-label="Game sections">
+      <button class="nav-tab active" type="button" role="tab" aria-selected="true" data-section="home"><span aria-hidden="true"><svg class="icon-svg nav-icon" viewBox="0 0 48 48" fill="#ffd45c" stroke="currentColor" stroke-width="2.5"><path d="m5 23 19-16 19 16v18H28V29h-8v12H5Z"/><path d="M3 24 24 6l21 18" fill="none"/></svg></span> Play</button>
+      <button class="nav-tab" type="button" role="tab" aria-selected="false" data-section="shop"><span aria-hidden="true"><svg class="icon-svg nav-icon" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M8 18h32l-3 24H11Z" fill="#ffb9c8"/><path d="M16 18v-5a8 8 0 0 1 16 0v5M8 24h32M19 31h10"/></svg></span> Shop</button>
+      <button class="nav-tab" type="button" role="tab" aria-selected="false" data-section="wardrobe"><span aria-hidden="true"><svg class="icon-svg nav-icon" viewBox="0 0 48 48" fill="#ffb9c8" stroke="currentColor" stroke-width="2.5"><path d="M24 6a18 18 0 1 0 0 36h3a5 5 0 0 0 3-9c-2-2-1-5 2-5h4a6 6 0 0 0 6-6A18 18 0 0 0 24 6Z"/><circle cx="15" cy="20" r="2" fill="#fffdf6"/><circle cx="22" cy="13" r="2" fill="#fffdf6"/><circle cx="31" cy="15" r="2" fill="#fffdf6"/></svg></span> Wardrobe</button>
+    </nav>
+    <p id="account-note" class="account-note" aria-live="polite" hidden></p>
+    <section id="home-view" class="home-view">
+      <div class="welcome-panel">
+        <div class="welcome-copy">
+          <p class="eyebrow">Your little snack adventure</p>
+          <h1>Ready, set,<br><span>squish!</span></h1>
+          <p class="welcome-note">Pick a stage, pop some buns, and fill your shelf with the cutest crew.</p>
+          <div class="welcome-actions"><button id="start-button" class="primary-button" type="button">Play level 1</button><span id="home-progress">Level 1 is ready!</span></div>
+        </div>
+        <div class="welcome-art" aria-hidden="true"><span class="sparkle sparkle-one"><svg class="icon-svg" viewBox="0 0 48 48" fill="#ffd45c" stroke="currentColor" stroke-width="2"><path d="m24 4 5 15 15 5-15 5-5 15-5-15-15-5 15-5Z"/></svg></span><img src="icon.svg" alt=""><span class="sparkle sparkle-two"><svg class="icon-svg" viewBox="0 0 48 48" fill="#a9e6f2" stroke="currentColor" stroke-width="2"><path d="m24 4 5 15 15 5-15 5-5 15-5-15-15-5 15-5Z"/></svg></span><span class="art-caption">BUNS<br>OF FUN</span></div>
+        <span class="welcome-ribbon">FRESHLY STEAMED FUN</span>
+      </div>
+      <section class="level-section" aria-labelledby="levels-title">
+        <div class="section-heading"><div><p class="eyebrow">Finish all 20 levels in a world for 3 diamonds</p><h2 id="levels-title">Pick your next level</h2></div><span id="unlocked-summary" class="section-count">1 / 500 open</span></div>
+        <div id="level-grid" class="level-grid" aria-label="Level map"></div>
+      </section>
+      <p class="home-footnote"><span aria-hidden="true"><svg class="icon-svg tiny-icon" viewBox="0 0 48 48" fill="#ffd45c" stroke="currentColor" stroke-width="2"><path d="m24 5 6 12 13 2-10 9 2 13-11-6-12 6 3-13-10-9 13-2Z"/></svg></span> Finish stages to earn coins, gems, and new surprises.</p>
+    </section>
+    <section id="shop-view" class="content-view shop-view">
+      <div class="view-heading"><p class="eyebrow">A little treat for your tray</p><h1>Snack Shop</h1><p>All skins and features come from mystery boxes. A duplicate uses the coins and gives no reward.</p></div>
+      <section class="gift-shelf" aria-label="Mystery gift boxes">
+        <div class="gift-feature" aria-labelledby="gift-title"><div class="gift-art" aria-hidden="true"><svg class="icon-svg gift-icon" viewBox="0 0 48 48" fill="#ffb9c8" stroke="currentColor" stroke-width="2.5"><path d="M6 20h36v23H6Z"/><path d="M24 20v23M6 27h36M24 20H12a5 5 0 1 1 5-5c0 3 3 5 7 5Zm0 0h12a5 5 0 1 0-5-5c0 3-3 5-7 5Z" fill="none"/></svg></div><div class="gift-copy"><p class="eyebrow">Common + rare skins</p><h2 id="gift-title">Surprise Bao Box</h2><p>50 looks to collect · rare skins are extra special.</p></div><button id="gift-box-button" class="buy-button gift-buy" type="button">Open · 120 <svg class="icon-svg tiny-icon" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="18" fill="#ffd45c" stroke="#302d50" stroke-width="2.5"/><circle cx="24" cy="24" r="12" fill="none" stroke="#302d50" stroke-width="2"/><path d="m24 15 3 6 6 1-5 4 1 6-5-3-5 3 1-6-5-4 6-1Z" fill="#fffdf6"/></svg></button></div>
+        <div class="gift-feature feature-gift" aria-labelledby="feature-gift-title"><div class="gift-art" aria-hidden="true"><svg class="icon-svg gift-icon" viewBox="0 0 48 48" fill="#a9e6f2" stroke="currentColor" stroke-width="2.5"><path d="M6 18h36v24H6Z"/><path d="M16 18v-6h16v6M6 27h36m-22 0v6h8v-6" fill="none"/></svg></div><div class="gift-copy"><p class="eyebrow">25 useful surprises</p><h2 id="feature-gift-title">Feature Box</h2><p>Collect helpful extras for your next run.</p></div><button id="feature-gift-box-button" class="buy-button gift-buy" type="button">Open · 190 <svg class="icon-svg tiny-icon" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="18" fill="#ffd45c" stroke="#302d50" stroke-width="2.5"/><circle cx="24" cy="24" r="12" fill="none" stroke="#302d50" stroke-width="2"/><path d="m24 15 3 6 6 1-5 4 1 6-5-3-5 3 1-6-5-4 6-1Z" fill="#fffdf6"/></svg></button></div>
+        <div class="gift-feature rare-gift" aria-labelledby="rare-gift-title"><div class="gift-art" aria-hidden="true"><svg class="icon-svg gift-icon" viewBox="0 0 48 48"><path d="m24 5 14 9-14 29L10 14Z" fill="#c3b3ff" stroke="#302d50" stroke-width="2.5"/><path d="m10 14 14 2 14-2M24 16v27" fill="none" stroke="#302d50" stroke-width="2"/></svg></div><div class="gift-copy"><p class="eyebrow">Guaranteed rare skin</p><h2 id="rare-gift-title">Gem Bao Box</h2><p>Spend diamonds for a rare pull · 10% chance for each rare skin.</p></div><button id="rare-skin-gift-button" class="buy-button gift-buy" type="button">Open · 3 <svg class="icon-svg tiny-icon" viewBox="0 0 48 48" aria-hidden="true"><path d="m24 5 14 9-14 29L10 14Z" fill="#c3b3ff" stroke="#302d50" stroke-width="2.5"/><path d="m10 14 14 2 14-2M24 16v27" fill="none" stroke="#302d50" stroke-width="2"/></svg></button></div>
+      </section>
+      <div class="box-odds" aria-label="Gift box odds"><span><strong>Surprise Bao Box:</strong> common skin 88% total · 2.2% each; rare skin 12% total · 1.2% each</span><span><strong>Gem Bao Box:</strong> rare skin guaranteed · 10% each</span><span><strong>Feature Box:</strong> 4% each</span><span>Duplicates spend the box currency and award nothing.</span></div>
+      <form id="admin-code-form" class="admin-code-panel"><label for="admin-code">Have a club code?<input id="admin-code" name="code" type="text" maxlength="24" autocomplete="off" autocapitalize="characters" placeholder="Enter code"></label><button class="secondary-button" type="submit">Redeem</button></form>
+      <p id="admin-code-message" class="shop-message" aria-live="polite"></p>
+      <p id="shop-message" class="shop-message" aria-live="polite"></p>
+      <section class="shop-section"><div class="section-heading"><div><p class="eyebrow">Common and rare box pulls</p><h2>Bao skin collection</h2></div><span id="skin-collection-count" class="section-count">1 / 50 collected</span></div><div id="skin-shop-grid" class="item-grid"></div></section>
+      <section class="shop-section"><div class="section-heading"><div><p class="eyebrow">Found in Feature Boxes</p><h2>Feature collection</h2></div><span id="feature-collection-count" class="section-count">0 / 25 collected</span></div><div id="feature-shop-grid" class="item-grid"></div></section>
+    </section>
+    <section id="wardrobe-view" class="content-view wardrobe-view">
+      <div class="view-heading"><p class="eyebrow">Make room for your favourites</p><h1>Your Bao Parade</h1><p>Pick up to 5 skins and 3 features for your next run.</p></div>
+      <section class="wardrobe-section"><div class="section-heading"><div><p class="eyebrow">Your bun bunch</p><h2>Active skins</h2></div><span id="skin-loadout-count" class="section-count">0 / 5</span></div><div id="wardrobe-skins" class="item-grid wardrobe-grid"></div></section>
+      <section class="wardrobe-section"><div class="section-heading"><div><p class="eyebrow">Helpful little extras</p><h2>Active features</h2></div><span id="feature-loadout-count" class="section-count">0 / 3</span></div><div id="wardrobe-features" class="item-grid wardrobe-grid"></div></section>
+      <p id="wardrobe-message" class="shop-message" aria-live="polite"></p>
+    </section>
+    <section class="heading game-heading" aria-label="Current level">
+      <div><p id="round-kicker" class="eyebrow">STAGE 01 · THE STEAM GARDEN</p><h1 id="round-level-name">Level 1</h1><p id="round-level-detail" class="round-detail">Pop 10 happy buns!</p></div>
+      <button id="exit-game" class="back-button" type="button"><svg class="icon-svg tiny-icon" viewBox="0 0 48 48" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="3"><path d="M39 24H9m13-13L9 24l13 13"/></svg> Level map</button>
+    </section>
+    <section class="stats game-stats" aria-label="Round score">
+      <div class="stat"><span class="stat-label">Score</span><span id="score" class="stat-value">0</span></div>
+      <div id="timer-card" class="stat timer-card"><span class="stat-label">Steam time</span><span class="stat-value"><span id="timer">45</span><small>sec</small></span></div>
+      <div class="stat combo-card"><span class="stat-label">Buns popped</span><span class="stat-value"><span id="hit-count">0</span><small>/ <span id="hit-goal">10</span></small></span></div>
+    </section>
+    <div class="round-streak"><span>Streak <b id="combo">0</b> <b id="multiplier">x1</b></span><div class="streak-meter" role="progressbar" aria-label="Progress to next multiplier" aria-valuemin="0" aria-valuemax="5" aria-valuenow="0"><div id="streak-fill" class="streak-fill"></div></div><span id="spice-label">Mild</span></div>
+    <section class="arena game-arena" aria-label="Dumpling squishing game">
+      <canvas id="game-canvas" aria-label="Tap the dumplings, avoid the chili bombs"></canvas>
+      <div id="result-screen" class="screen" hidden>
+        <div class="screen-content">
+          <span id="result-dumpling" class="hero-dumpling" aria-hidden="true"><svg class="icon-svg result-icon" viewBox="0 0 48 48" fill="#ffd45c" stroke="currentColor" stroke-width="2.5"><path d="M13 8h22v12a11 11 0 0 1-22 0Zm0 5H6v5q0 9 12 9m17-14h7v5q0 9-12 9m-6 4v7m-9 0h18"/></svg></span>
+          <p id="result-kicker" class="eyebrow">LEVEL COMPLETE!</p>
+          <h2 id="result-title">Bun-believable!</h2>
+          <p id="result-copy" class="screen-copy">Your bun bunch is cheering!</p>
+          <p id="result-reward" class="result-reward"></p>
+          <button id="continue-button" class="primary-button" type="button">Next level</button>
+          <button id="replay-button" class="secondary-button" type="button">Try again</button>
+          <button id="result-home-button" class="text-button" type="button">Back to level map</button>
+        </div>
+      </div>
+    </section>
+    <div class="bottomline game-bottomline" aria-label="Streak bonus progress"><span class="goal"><span class="goal-dot"></span><span id="bonus-label">5 pops to x2</span></span><span>Every 5 pops boosts your score!</span></div>
+    <div id="toast" class="toast" aria-live="polite"></div>
+    <div id="gift-reveal" class="gift-reveal" role="dialog" aria-modal="true" aria-labelledby="gift-reveal-title" hidden>
+      <div class="gift-reveal-card"><span id="gift-reveal-art" class="gift-reveal-art" aria-hidden="true"><svg class="icon-svg reveal-icon" viewBox="0 0 48 48" fill="#ffb9c8" stroke="currentColor" stroke-width="2.5"><path d="M6 20h36v23H6Z"/><path d="M24 20v23M6 27h36M24 20H12a5 5 0 1 1 5-5c0 3 3 5 7 5Zm0 0h12a5 5 0 1 0-5-5c0 3-3 5-7 5Z" fill="none"/></svg></span><h2 id="gift-reveal-title">A new bao buddy!</h2><p id="gift-reveal-copy"></p><button id="gift-reveal-close" class="primary-button" type="button">Yay!</button></div>
+    </div>
+    <footer class="footer">Made with extra sprinkles</footer>
+  </main>
+  <script src="auth.js" defer></script>
+  <script src="app.js" defer></script>
+</body>
+</html>

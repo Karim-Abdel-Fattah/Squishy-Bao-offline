@@ -1,0 +1,15 @@
+{
+  "id": ".",
+  "name": "Squishy Bao Club: Snack Adventure",
+  "short_name": "Bao Club",
+  "description": "Pop through 30 playful dumpling levels, collect skins, and fill your bao tray.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f8f6ff",
+  "theme_color": "#fff0a8",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
