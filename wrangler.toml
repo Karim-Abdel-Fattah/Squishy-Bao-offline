@@ -1,4 +1,4 @@
-name = "squishy-bao-club"
+name = "squishy-bao-offline"
 main = "worker/index.js"
 compatibility_date = "2026-10-05"
 workers_dev = true
